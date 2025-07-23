@@ -1,75 +1,115 @@
 import { OrbitControls } from "@react-three/drei";
 import { EffectComposer, Outline } from "@react-three/postprocessing";
 import Idle from "./Idle";
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 const Experience = () => {
-  const idleRefs = useRef(Array(10).fill(null));
+  const CHARACTER_COUNT = 100;
+  const idleRefs = useRef(Array(CHARACTER_COUNT).fill(null));
   const directionalLightRef = useRef();
-  const { mouse } = useThree();
-  const target = useRef(new THREE.Vector3());
+  const { mouse, camera, size } = useThree();
   const [headBones, setHeadBones] = useState([]);
   const lightSpeed = 0.5;
 
-  // Memoized position generation
+  // Mouse tracking
+  const mouseTarget = useRef(new THREE.Vector3());
+  const raycaster = useRef(new THREE.Raycaster());
+  const plane = useRef(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0));
+
+  // Positions with more space between characters
   const characterPositions = useRef(
-    Array.from({ length: 10 }, () => [
-      (Math.random() - 0.5) * 10,
+    Array.from({ length: CHARACTER_COUNT }, () => [
+      (Math.random() - 0.5) * 40, // Wider spread on X axis
       0,
-      (Math.random() - 0.5) * 10,
+      (Math.random() - 0.5) * 40, // Wider spread on Z axis
     ])
   ).current;
 
-  // Optimized bone finding
-  const findHeadBones = useCallback(() => {
-    const bones = [];
-    idleRefs.current.forEach((ref) => {
-      ref?.traverse((child) => {
-        if (child.isBone && child.name.includes("Head")) {
-          bones.push(child);
+  // Find head bones with retry logic
+  useEffect(() => {
+    const findBones = () => {
+      const bones = [];
+      idleRefs.current.forEach((ref) => {
+        if (ref) {
+          // Look for the exact Mixamo head bone
+          const headBone = ref.getObjectByName("mixamorigHead");
+          if (headBone) bones.push(headBone);
         }
       });
-    });
-    return bones;
+      return bones;
+    };
+
+    // Try immediately
+    const bones = findBones();
+    if (bones.length > 0) {
+      setHeadBones(bones);
+    } else {
+      // Retry after a delay if models aren't loaded yet
+      const timeout = setTimeout(() => {
+        const retryBones = findBones();
+        if (retryBones.length > 0) setHeadBones(retryBones);
+      }, 1000);
+      return () => clearTimeout(timeout);
+    }
   }, []);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const bones = findHeadBones();
-      if (bones.length > 0) {
-        setHeadBones(bones);
-        clearInterval(interval);
-      }
-    }, 100);
-    return () => clearInterval(interval);
-  }, [findHeadBones]);
-
-  // Optimized frame loop
   useFrame(({ clock }) => {
-    // Light rotation
+    const delta = clock.getDelta();
     const time = clock.getElapsedTime();
+
+    // Light animation
     if (directionalLightRef.current) {
       directionalLightRef.current.position.x = Math.sin(time * lightSpeed) * 5;
       directionalLightRef.current.position.z = Math.cos(time * lightSpeed) * 5;
     }
 
-    // Head tracking
+    // Convert mouse to world coordinates
+    raycaster.current.setFromCamera(
+      new THREE.Vector2(mouse.x, mouse.y),
+      camera
+    );
+    const intersection = new THREE.Vector3();
+    raycaster.current.ray.intersectPlane(plane.current, intersection);
+
+    if (intersection) {
+      mouseTarget.current.lerp(intersection, 0.1);
+    }
+
+    // Head tracking logic
     if (headBones.length === 0) return;
 
-    target.current.set(mouse.x * 5, mouse.y * 3, 2);
+    console.log(headBones.position);
 
-    const tempRotation = new THREE.Euler();
+    const tempV = new THREE.Vector3();
+    const tempQ = new THREE.Quaternion();
+    const tempE = new THREE.Euler();
+
     headBones.forEach((headBone) => {
-      headBone.lookAt(target.current);
+      // Get world position of the head
+      headBone.getWorldPosition(tempV);
 
-      tempRotation.setFromQuaternion(headBone.quaternion);
-      tempRotation.x = THREE.MathUtils.clamp(tempRotation.x, -0.3, 0.3);
-      tempRotation.y = THREE.MathUtils.clamp(tempRotation.y, -0.5, 0.5);
-      tempRotation.z = 0;
+      // Calculate direction to mouse target
+      const direction = new THREE.Vector3()
+        .subVectors(mouseTarget.current, tempV)
+        .normalize();
 
-      headBone.quaternion.setFromEuler(tempRotation);
+      // Calculate target rotation
+      tempQ.setFromUnitVectors(
+        new THREE.Vector3(0, 0, 1), // Forward direction
+        direction
+      );
+
+      // Smooth rotation with damping
+      headBone.quaternion.slerp(tempQ, 0.1 * (60 * delta));
+
+      // Apply rotation limits
+      tempE.setFromQuaternion(headBone.quaternion);
+      tempE.x = THREE.MathUtils.clamp(tempE.x, -0.3, 0.3);
+      tempE.y = THREE.MathUtils.clamp(tempE.y, -0.8, 0.8); // More natural neck rotation
+      tempE.z = 0;
+      headBone.quaternion.setFromEuler(tempE);
     });
   });
 
@@ -103,7 +143,7 @@ const Experience = () => {
         position={[0, -1, 0]}
         receiveShadow
       >
-        <planeGeometry args={[20, 20]} />
+        <planeGeometry args={[80, 80]} /> {/* Larger ground plane */}
         <shadowMaterial transparent opacity={0.2} />
       </mesh>
 
