@@ -1,0 +1,13 @@
+@font-face {
+    font-family: 'Makna Script';
+    src: url('MaknaScript.eot');
+    src: local('Makna Script'), local('MaknaScript'),
+        url('MaknaScript.eot?#iefix') format('embedded-opentype'),
+        url('MaknaScript.woff2') format('woff2'),
+        url('MaknaScript.woff') format('woff'),
+        url('MaknaScript.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+

@@ -1,39 +1,148 @@
-import { OrbitControls } from "@react-three/drei";
 import { EffectComposer, Outline } from "@react-three/postprocessing";
 import Idle from "./Idle";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
+const CHARACTER_COUNT = 30;
+
+const Particles = ({ count = 5000, radius = 1000 }) => {
+  const [mouseMoved, setMouseMoved] = useState(false);
+  const mesh = useRef();
+  const { mouse, camera } = useThree();
+  const followPoint = useRef(new THREE.Vector3());
+  const raycaster = useRef(new THREE.Raycaster());
+  const plane = useMemo(
+    () => new THREE.Plane(new THREE.Vector3(0, 0, 1), 0),
+    []
+  );
+
+  const particles = useMemo(() => {
+    const pos = [];
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      const r = radius * (0.5 + Math.random() * 0.5);
+      const x = r * Math.sin(phi) * Math.cos(angle);
+      const y = r * Math.sin(phi) * Math.sin(angle);
+      const z = r * Math.cos(phi);
+      pos.push(x, y, z);
+    }
+    return new Float32Array(pos);
+  }, [count, radius]);
+
+  const velocities = useMemo(() => {
+    return new Array(count)
+      .fill(0)
+      .map(
+        () =>
+          new THREE.Vector3(
+            (Math.random() - 0.5) * 0.005,
+            (Math.random() - 0.5) * 0.005,
+            (Math.random() - 0.5) * 0.005
+          )
+      );
+  }, [count]);
+
+  const followTimers = useRef(new Array(count).fill(0));
+
+  useEffect(() => {
+    const handleMove = () => {
+      setMouseMoved(true);
+      clearTimeout(window.mouseMoveTimeout);
+      window.mouseMoveTimeout = setTimeout(() => setMouseMoved(false), 500);
+    };
+    window.addEventListener("mousemove", handleMove);
+    return () => window.removeEventListener("mousemove", handleMove);
+  }, []);
+
+  useFrame(() => {
+    raycaster.current.setFromCamera(mouse, camera);
+    const intersect = new THREE.Vector3();
+    raycaster.current.ray.intersectPlane(plane, intersect);
+    followPoint.current.copy(intersect);
+
+    const pos = mesh.current.geometry.attributes.position;
+    for (let i = 0; i < count; i++) {
+      let i3 = i * 3;
+      const p = new THREE.Vector3(
+        pos.array[i3],
+        pos.array[i3 + 1],
+        pos.array[i3 + 2]
+      );
+
+      if (mouseMoved && Math.random() < 0.02) {
+        followTimers.current[i] = Math.random() * 100;
+      }
+
+      if (followTimers.current[i] > 0) {
+        const dir = followPoint.current
+          .clone()
+          .sub(p)
+          .normalize()
+          .multiplyScalar(0.02);
+        p.add(dir);
+        followTimers.current[i] -= 1;
+      } else {
+        p.add(velocities[i]);
+      }
+
+      if (p.length() > radius) p.setLength(radius * Math.random());
+
+      pos.array[i3] = p.x;
+      pos.array[i3 + 1] = p.y;
+      pos.array[i3 + 2] = p.z;
+    }
+    pos.needsUpdate = true;
+  });
+
+  return (
+    <points ref={mesh}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          count={particles.length / 3}
+          array={particles}
+          itemSize={3}
+        />
+      </bufferGeometry>
+      <pointsMaterial size={0.08} color="black" sizeAttenuation />
+    </points>
+  );
+};
+
 const Experience = () => {
-  const CHARACTER_COUNT = 100;
   const idleRefs = useRef(Array(CHARACTER_COUNT).fill(null));
   const directionalLightRef = useRef();
-  const { mouse, camera, size } = useThree();
   const [headBones, setHeadBones] = useState([]);
   const lightSpeed = 0.5;
 
-  // Mouse tracking
-  const mouseTarget = useRef(new THREE.Vector3());
-  const raycaster = useRef(new THREE.Raycaster());
-  const plane = useRef(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0));
-
-  // Positions with more space between characters
   const characterPositions = useRef(
     Array.from({ length: CHARACTER_COUNT }, () => [
-      (Math.random() - 0.5) * 40, // Wider spread on X axis
+      (Math.random() - 0.5) * 20,
       0,
-      (Math.random() - 0.5) * 40, // Wider spread on Z axis
+      (Math.random() - 0.5) * 20,
     ])
   ).current;
 
-  // Find head bones with retry logic
+  useEffect(() => {
+    if (directionalLightRef.current) {
+      const light = directionalLightRef.current;
+      light.shadow.camera.near = 0.5;
+      light.shadow.camera.far = 50;
+      light.shadow.camera.left = -20;
+      light.shadow.camera.right = 20;
+      light.shadow.camera.top = 20;
+      light.shadow.camera.bottom = -20;
+      light.shadow.bias = -0.0001;
+    }
+  }, []);
+
   useEffect(() => {
     const findBones = () => {
       const bones = [];
       idleRefs.current.forEach((ref) => {
         if (ref) {
-          // Look for the exact Mixamo head bone
           const headBone = ref.getObjectByName("mixamorigHead");
           if (headBone) bones.push(headBone);
         }
@@ -41,12 +150,10 @@ const Experience = () => {
       return bones;
     };
 
-    // Try immediately
     const bones = findBones();
     if (bones.length > 0) {
       setHeadBones(bones);
     } else {
-      // Retry after a delay if models aren't loaded yet
       const timeout = setTimeout(() => {
         const retryBones = findBones();
         if (retryBones.length > 0) setHeadBones(retryBones);
@@ -59,53 +166,22 @@ const Experience = () => {
     const delta = clock.getDelta();
     const time = clock.getElapsedTime();
 
-    // Light animation
     if (directionalLightRef.current) {
       directionalLightRef.current.position.x = Math.sin(time * lightSpeed) * 5;
       directionalLightRef.current.position.z = Math.cos(time * lightSpeed) * 5;
     }
 
-    // Convert mouse to world coordinates
-    raycaster.current.setFromCamera(
-      new THREE.Vector2(mouse.x, mouse.y),
-      camera
-    );
-    const intersection = new THREE.Vector3();
-    raycaster.current.ray.intersectPlane(plane.current, intersection);
-
-    if (intersection) {
-      mouseTarget.current.lerp(intersection, 0.1);
-    }
-
-    // Head tracking logic
     if (headBones.length === 0) return;
 
-    const tempV = new THREE.Vector3();
     const tempQ = new THREE.Quaternion();
     const tempE = new THREE.Euler();
 
     headBones.forEach((headBone) => {
-      // Get world position of the head
-      headBone.getWorldPosition(tempV);
-
-      // Calculate direction to mouse target
-      const direction = new THREE.Vector3()
-        .subVectors(mouseTarget.current, tempV)
-        .normalize();
-
-      // Calculate target rotation (Mixamo rigs often face Z-)
-      tempQ.setFromUnitVectors(
-        new THREE.Vector3(0, 0, -1), // Mixamo characters usually face negative Z
-        direction
-      );
-
-      // Smooth rotation with damping
+      tempQ.identity();
       headBone.quaternion.slerp(tempQ, 0.1 * (60 * delta));
-
-      // Apply rotation limits
       tempE.setFromQuaternion(headBone.quaternion);
-      tempE.x = THREE.MathUtils.clamp(tempE.x, -0.3, 0.3);
-      tempE.y = THREE.MathUtils.clamp(tempE.y, -0.8, 0.8);
+      tempE.x = 0;
+      tempE.y = 0;
       tempE.z = 0;
       headBone.quaternion.setFromEuler(tempE);
     });
@@ -113,15 +189,19 @@ const Experience = () => {
 
   return (
     <>
-      <OrbitControls />
       <ambientLight intensity={0.5} />
       <directionalLight
         ref={directionalLightRef}
-        position={[-5, 5, 5]}
+        position={[-5, 10, 5]}
         intensity={1}
         castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-far={50}
+        shadow-camera-left={-20}
+        shadow-camera-right={20}
+        shadow-camera-top={20}
+        shadow-camera-bottom={-20}
       />
       <directionalLight position={[5, 5, 5]} intensity={0.5} color="#ff9999" />
 
@@ -132,6 +212,8 @@ const Experience = () => {
             ref={(el) => (idleRefs.current[i] = el)}
             scale={0.02}
             position={pos}
+            castShadow
+            receiveShadow
           />
         ))}
       </group>
@@ -141,9 +223,11 @@ const Experience = () => {
         position={[0, -1, 0]}
         receiveShadow
       >
-        <planeGeometry args={[80, 80]} /> {/* Larger ground plane */}
-        <shadowMaterial transparent opacity={0.2} />
+        <planeGeometry args={[80, 80]} />
+        <shadowMaterial transparent opacity={0.4} />
       </mesh>
+
+      <Particles count={500} radius={10} />
 
       <EffectComposer multisampling={8} autoClear={false}>
         <Outline

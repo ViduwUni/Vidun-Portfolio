@@ -2,7 +2,12 @@
 export default {
   content: ["./index.html", "./src/**/*.{js,jsx}"],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        Makna: ['Makna', 'sans-serif'],
+        Usama: ['Usama', 'sans-serif']
+      }
+    },
   },
   plugins: [],
 };
