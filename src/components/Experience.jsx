@@ -80,8 +80,6 @@ const Experience = () => {
     // Head tracking logic
     if (headBones.length === 0) return;
 
-    console.log(headBones.position);
-
     const tempV = new THREE.Vector3();
     const tempQ = new THREE.Quaternion();
     const tempE = new THREE.Euler();
@@ -95,9 +93,9 @@ const Experience = () => {
         .subVectors(mouseTarget.current, tempV)
         .normalize();
 
-      // Calculate target rotation
+      // Calculate target rotation (Mixamo rigs often face Z-)
       tempQ.setFromUnitVectors(
-        new THREE.Vector3(0, 0, 1), // Forward direction
+        new THREE.Vector3(0, 0, -1), // Mixamo characters usually face negative Z
         direction
       );
 
@@ -107,7 +105,7 @@ const Experience = () => {
       // Apply rotation limits
       tempE.setFromQuaternion(headBone.quaternion);
       tempE.x = THREE.MathUtils.clamp(tempE.x, -0.3, 0.3);
-      tempE.y = THREE.MathUtils.clamp(tempE.y, -0.8, 0.8); // More natural neck rotation
+      tempE.y = THREE.MathUtils.clamp(tempE.y, -0.8, 0.8);
       tempE.z = 0;
       headBone.quaternion.setFromEuler(tempE);
     });

@@ -13,9 +13,11 @@
     "@react-three/drei": "^10.5.2",
     "@react-three/fiber": "^9.2.0",
     "@react-three/postprocessing": "^3.0.4",
+    "@studio-freight/lenis": "^1.0.42",
     "gsap": "^3.13.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "stats.js": "^0.17.0",
     "three": "^0.178.0"
   },
   "devDependencies": {
