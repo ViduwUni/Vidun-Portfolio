@@ -1,41 +1,53 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 
 const CursorFollower = ({ size = 100 }) => {
   const circleRef = useRef(null);
   const pos = useRef({ x: 0, y: 0 });
   const mouse = useRef({ x: 0, y: 0 });
-  const [visible, setVisible] = useState(false);
+  const visible = useRef(false);
+  const visibilityChanged = useRef(false);
 
   useEffect(() => {
-    const updateMouse = (e) => {
-      mouse.current = { x: e.clientX, y: e.clientY };
+    let rafId;
 
-      // Check if element under cursor is a canvas or inside a canvas
+    const updateMouse = (e) => {
+      mouse.current.x = e.clientX;
+      mouse.current.y = e.clientY;
+
       const el = document.elementFromPoint(e.clientX, e.clientY);
-      if (el && (el.tagName === "CANVAS" || el.closest("canvas"))) {
-        setVisible(true);
-      } else {
-        setVisible(false);
+      const isVisible = el && (el.tagName === "CANVAS" || el.closest("canvas"));
+
+      if (visible.current !== isVisible) {
+        visible.current = isVisible;
+        visibilityChanged.current = true;
       }
     };
 
-    window.addEventListener("mousemove", updateMouse);
-
     const followMouse = () => {
-      pos.current.x += (mouse.current.x - pos.current.x) * 0.1;
-      pos.current.y += (mouse.current.y - pos.current.y) * 0.1;
+      pos.current.x += (mouse.current.x - pos.current.x) * 0.15;
+      pos.current.y += (mouse.current.y - pos.current.y) * 0.15;
 
       if (circleRef.current) {
         circleRef.current.style.transform = `translate3d(${
           pos.current.x - size / 2
         }px, ${pos.current.y - size / 2}px, 0)`;
+
+        if (visibilityChanged.current) {
+          circleRef.current.style.opacity = visible.current ? "1" : "0";
+          visibilityChanged.current = false;
+        }
       }
 
-      requestAnimationFrame(followMouse);
+      rafId = requestAnimationFrame(followMouse);
     };
-    followMouse();
 
-    return () => window.removeEventListener("mousemove", updateMouse);
+    window.addEventListener("mousemove", updateMouse);
+    rafId = requestAnimationFrame(followMouse);
+
+    return () => {
+      window.removeEventListener("mousemove", updateMouse);
+      cancelAnimationFrame(rafId);
+    };
   }, [size]);
 
   return (
@@ -53,8 +65,8 @@ const CursorFollower = ({ size = 100 }) => {
         mixBlendMode: "difference",
         backgroundColor: "#fff",
         border: "2px solid #000",
-        transition: "opacity 0.3s ease, background-color 0.2s ease",
-        opacity: visible ? 1 : 0,
+        opacity: 0,
+        willChange: "transform, opacity",
       }}
     />
   );

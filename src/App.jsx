@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Suspense, lazy } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ScrollSmoother } from "gsap/ScrollSmoother";
@@ -6,13 +6,13 @@ import FPSCounter from "./components/FPSCounter";
 import LoaderReveal from "./components/LoaderReveal";
 import CursorFollower from "./components/CursorFollower";
 
-// Pages
-import Intro from "./pages/Intro";
-import Me from "./pages/Me";
-import Skills from "./pages/Skills";
-import Timeline from "./pages/Timeline";
-import Projects from "./pages/Projects";
-import Contact from "./pages/Contact";
+// Lazy-load heavy sections
+const Intro = lazy(() => import("./pages/Intro"));
+const Me = lazy(() => import("./pages/Me"));
+const Skills = lazy(() => import("./pages/Skills"));
+const Timeline = lazy(() => import("./pages/Timeline"));
+const Projects = lazy(() => import("./pages/Projects"));
+const Contact = lazy(() => import("./pages/Contact"));
 
 function App() {
   const wrapperRef = useRef();
@@ -32,8 +32,12 @@ function App() {
       ignoreMobileResize: true,
     });
 
+    // Prevent smoother reinit on HMR
     return () => {
-      if (smootherRef.current) smootherRef.current.kill();
+      if (smootherRef.current) {
+        smootherRef.current.kill();
+        smootherRef.current = null;
+      }
     };
   }, []);
 
@@ -51,16 +55,19 @@ function App() {
       <FPSCounter />
       <CursorFollower size={100} />
 
-      {/* Main Content */}
       <LoaderReveal onCheckedChange={setCheckedFromLoader}>
         <div id="smooth-wrapper" ref={wrapperRef} className="relative z-0">
           <div id="smooth-content" ref={contentRef}>
             <main className="w-full">
-              {pages.map((Page, index) => (
-                <section key={index} className="min-h-screen w-full">
-                  {typeof Page === "function" ? <Page /> : <Page />}
-                </section>
-              ))}
+              <Suspense
+                fallback={<div className="text-white p-10">Loading...</div>}
+              >
+                {pages.map((Page, index) => (
+                  <section key={index} className="min-h-screen w-full">
+                    {typeof Page === "function" ? <Page /> : <Page />}
+                  </section>
+                ))}
+              </Suspense>
             </main>
           </div>
         </div>

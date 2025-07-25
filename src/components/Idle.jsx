@@ -1,24 +1,32 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import { useGraph } from "@react-three/fiber";
 import { useGLTF, useAnimations } from "@react-three/drei";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import { SkeletonUtils } from "three-stdlib";
 import * as THREE from "three";
 
-// eslint-disable-next-line no-unused-vars
 const Idle = React.forwardRef(({ scale, position }, ref) => {
   const group = useRef();
-  const { scene, animations } = useGLTF("/models/idle.glb");
-  const clone = React.useMemo(() => SkeletonUtils.clone(scene), [scene]);
+
+  const { scene, animations } = useGLTF(
+    "/models/idle-draco.glb",
+    true,
+    (loader) => {
+      const dracoLoader = new DRACOLoader();
+      dracoLoader.setDecoderPath("/draco/");
+      loader.setDRACOLoader(dracoLoader);
+    }
+  );
+
+  const clone = useMemo(() => SkeletonUtils.clone(scene), [scene]);
   const { nodes } = useGraph(clone);
   const { actions, names } = useAnimations(animations, group);
 
-  // Shared material for all instances
-  const toonMaterial = React.useMemo(() => {
+  const toonMaterial = useMemo(() => {
     const material = new THREE.MeshToonMaterial({
       color: new THREE.Color().setHSL(Math.random(), 0.5, 0.7),
     });
 
-    // Simple gradient map
     const canvas = document.createElement("canvas");
     canvas.width = 2;
     canvas.height = 2;
@@ -35,13 +43,12 @@ const Idle = React.forwardRef(({ scale, position }, ref) => {
     return material;
   }, []);
 
-  // Animation setup
   useEffect(() => {
     if (actions[names[0]]) {
       const action = actions[names[0]];
       action
         .reset()
-        .setEffectiveTimeScale(0.9 + Math.random() * 0.2) // Slight variation
+        .setEffectiveTimeScale(0.9 + Math.random() * 0.2)
         .setEffectiveWeight(1)
         .setLoop(THREE.LoopRepeat, Infinity)
         .play();
@@ -57,7 +64,6 @@ const Idle = React.forwardRef(({ scale, position }, ref) => {
     <group ref={group} dispose={null} scale={scale} position={position}>
       <group name="Armature" rotation={[Math.PI / 2, 0, 0]} scale={0.01}>
         <primitive object={nodes.mixamorigHips} />
-        {/* Outline effect */}
         <skinnedMesh
           geometry={nodes.mesh_Mat_0.geometry}
           skeleton={nodes.mesh_Mat_0.skeleton}
@@ -69,7 +75,6 @@ const Idle = React.forwardRef(({ scale, position }, ref) => {
             })
           }
         />
-        {/* Main character */}
         <skinnedMesh
           castShadow
           receiveShadow
@@ -84,4 +89,9 @@ const Idle = React.forwardRef(({ scale, position }, ref) => {
 
 export default React.memo(Idle);
 
-useGLTF.preload("/models/idle.glb");
+// Preload the model using the custom DRACO loader
+useGLTF.preload("/models/idle-draco.glb", true, (loader) => {
+  const dracoLoader = new DRACOLoader();
+  dracoLoader.setDecoderPath("/draco/");
+  loader.setDRACOLoader(dracoLoader);
+});

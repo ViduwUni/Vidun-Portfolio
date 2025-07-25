@@ -4,9 +4,10 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        Makna: ['Makna', 'sans-serif'],
-        Usama: ['Usama', 'sans-serif']
-      }
+        Makna: ["Makna", "sans-serif"],
+        Usama: ["Usama", "sans-serif"],
+        HoneyBear: ["HoneyBear", "sans-serif"],
+      },
     },
   },
   plugins: [],
