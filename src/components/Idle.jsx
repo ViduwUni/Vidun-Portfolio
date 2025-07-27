@@ -5,11 +5,12 @@ import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import { SkeletonUtils } from "three-stdlib";
 import * as THREE from "three";
 
+// eslint-disable-next-line no-unused-vars
 const Idle = React.forwardRef(({ scale, position }, ref) => {
   const group = useRef();
 
   const { scene, animations } = useGLTF(
-    "/models/idle-draco.glb",
+    "/models/idle-draco-v1.glb",
     true,
     (loader) => {
       const dracoLoader = new DRACOLoader();
@@ -90,7 +91,7 @@ const Idle = React.forwardRef(({ scale, position }, ref) => {
 export default React.memo(Idle);
 
 // Preload the model using the custom DRACO loader
-useGLTF.preload("/models/idle-draco.glb", true, (loader) => {
+useGLTF.preload("/models/idle-draco-v1.glb", true, (loader) => {
   const dracoLoader = new DRACOLoader();
   dracoLoader.setDecoderPath("/draco/");
   loader.setDRACOLoader(dracoLoader);

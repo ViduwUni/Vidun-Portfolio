@@ -1,0 +1,28 @@
+.eye-wrapper {
+  position: relative;
+  transform: translateX(-50%);
+  z-index: 1000;
+}
+
+.eye {
+  width: 35px;
+  height: 35px;
+  background: rgba(0, 0, 0, 0.3); /* match navbar bg */
+  border: 2px solid rgba(255, 255, 255, 0.2); /* match border */
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(6px); /* match blur */
+}
+
+.pupil {
+  width: 12px;
+  height: 12px;
+  background: white; /* contrast with dark background */
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: transform 0.1s ease-out;
+}

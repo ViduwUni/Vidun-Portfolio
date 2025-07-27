@@ -5,9 +5,9 @@ import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { Preload } from "@react-three/drei";
 
-const CHARACTER_COUNT = 10;
+const CHARACTER_COUNT = 20;
 
-const Particles = ({ count = 300, radius = 10 }) => {
+const Particles = ({ count = 100, radius = 10 }) => {
   const mesh = useRef();
   const { mouse, camera } = useThree();
   const followPoint = useRef(new THREE.Vector3());
@@ -47,24 +47,14 @@ const Particles = ({ count = 300, radius = 10 }) => {
   }, [count]);
 
   const followTimers = useRef(new Array(count).fill(0));
-  const mouseMoved = useRef(false);
-
-  useEffect(() => {
-    const handleMove = () => {
-      mouseMoved.current = true;
-      clearTimeout(window.mouseMoveTimeout);
-      window.mouseMoveTimeout = setTimeout(() => {
-        mouseMoved.current = false;
-      }, 500);
-    };
-
-    window.addEventListener("mousemove", handleMove);
-    return () => window.removeEventListener("mousemove", handleMove);
-  }, []);
 
   useFrame(() => {
     raycaster.current.setFromCamera(mouse, camera);
-    raycaster.current.ray.intersectPlane(plane, followPoint.current);
+
+    const targetPoint = new THREE.Vector3();
+    if (raycaster.current.ray.intersectPlane(plane, targetPoint)) {
+      followPoint.current.lerp(targetPoint, 0.1); // smooth follow
+    }
 
     const pos = mesh.current.geometry.attributes.position;
     for (let i = 0; i < count; i++) {
@@ -74,10 +64,6 @@ const Particles = ({ count = 300, radius = 10 }) => {
         pos.array[i3 + 1],
         pos.array[i3 + 2]
       );
-
-      if (mouseMoved.current && Math.random() < 0.02) {
-        followTimers.current[i] = Math.random() * 100;
-      }
 
       if (followTimers.current[i] > 0) {
         dirVec.current
@@ -113,7 +99,7 @@ const Particles = ({ count = 300, radius = 10 }) => {
           itemSize={3}
         />
       </bufferGeometry>
-      <pointsMaterial size={0.08} color="black" sizeAttenuation />
+      <pointsMaterial size={0.06} color="black" sizeAttenuation />
     </points>
   );
 };
@@ -194,7 +180,7 @@ const Experience = () => {
         <shadowMaterial transparent opacity={0.3} />
       </mesh>
 
-      <Particles count={500} radius={10} />
+      <Particles count={300} radius={10} />
 
       <EffectComposer multisampling={2} autoClear={false}>
         <Outline

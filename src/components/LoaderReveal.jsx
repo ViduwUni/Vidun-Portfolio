@@ -3,6 +3,7 @@ import { gsap } from "gsap";
 
 const LoaderReveal = ({ children, onCheckedChange }) => {
   const [hidden, setHidden] = useState(false);
+  const [tempStop, setTempStop] = useState(true); // 👈 tempStop added
   const textRef = useRef(null);
   const maskRef = useRef(null);
   const overlayRef = useRef(null);
@@ -41,6 +42,7 @@ const LoaderReveal = ({ children, onCheckedChange }) => {
       ease: "power2.inOut",
       onComplete: () => {
         setHidden(true);
+        setTempStop(false); // 👈 update tempStop after reveal
       },
     });
   };
@@ -49,7 +51,7 @@ const LoaderReveal = ({ children, onCheckedChange }) => {
     <>
       <div>{children}</div>
 
-      {!hidden && (
+      {tempStop && !hidden && (
         <div
           ref={overlayRef}
           style={{
