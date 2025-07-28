@@ -2,14 +2,26 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { SmoothScrollContext } from "../App";
 import { gsap } from "gsap";
 import Eye from "./Eye";
+import { onSkillClick } from "../pages/Skills";
 
 const Navbar = ({ checked }) => {
   const smootherRef = useContext(SmoothScrollContext);
   const navRef = useRef(null);
   const [activeLink, setActiveLink] = useState("#intro");
   const bubbleRef = useRef(null);
+  const eyeContainerRef = useRef(null);
+  const [currentSkill, setCurrentSkill] = useState(null);
 
-  // Update active link based on scroll position
+  useEffect(() => {
+    const skillNotify = onSkillClick((skill) => {
+      setCurrentSkill(skill);
+    });
+
+    return () => {
+      skillNotify();
+    };
+  }, []);
+
   useEffect(() => {
     const sections = [
       "#intro",
@@ -43,12 +55,9 @@ const Navbar = ({ checked }) => {
     const moveBubble = (section) => {
       const linkElement = document.querySelector(`a[href="${section}"]`);
       if (linkElement && bubbleRef.current && navRef.current) {
-        // eslint-disable-next-line no-unused-vars
-        const { left, width, top, height } =
-          linkElement.getBoundingClientRect();
+        const { left, width, height } = linkElement.getBoundingClientRect();
         const navRect = navRef.current.getBoundingClientRect();
 
-        // Calculate maximum size that fits within navbar
         const maxSize = Math.min(
           navRect.height * 0.8,
           Math.max(width, height) * 1.2
@@ -56,7 +65,7 @@ const Navbar = ({ checked }) => {
 
         gsap.to(bubbleRef.current, {
           left: left - navRect.left + width / 2,
-          top: navRect.height / 2, // Always center vertically in navbar
+          top: navRect.height / 2,
           width: maxSize,
           height: maxSize,
           duration: 0.6,
@@ -65,13 +74,10 @@ const Navbar = ({ checked }) => {
       }
     };
 
-    // Initialize bubble position
     if (activeLink && navRef.current) {
       const linkElement = document.querySelector(`a[href="${activeLink}"]`);
       if (linkElement) {
-        // eslint-disable-next-line no-unused-vars
-        const { left, width, top, height } =
-          linkElement.getBoundingClientRect();
+        const { left, width, height } = linkElement.getBoundingClientRect();
         const navRect = navRef.current.getBoundingClientRect();
 
         const maxSize = Math.min(
@@ -92,7 +98,6 @@ const Navbar = ({ checked }) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [activeLink]);
 
-  // Rest of your component remains the same...
   useEffect(() => {
     let timeout;
 
@@ -147,7 +152,6 @@ const Navbar = ({ checked }) => {
       ref={navRef}
       className="fixed opacity-0 top-7 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-5xl bg-black/30 backdrop-blur-md rounded-full shadow-lg px-6 flex justify-between items-center border border-white/20 text-white"
     >
-      {/* Constrained bubble indicator */}
       <div
         ref={bubbleRef}
         className="absolute rounded-full bg-slate-100 pointer-events-none mix-blend-screen"
@@ -159,7 +163,6 @@ const Navbar = ({ checked }) => {
         }}
       />
 
-      {/* Left Nav */}
       <div className="flex gap-4 md:gap-6 flex-1 justify-start items-center h-12 relative z-10">
         {leftLinks.map((link) => (
           <a
@@ -175,12 +178,18 @@ const Navbar = ({ checked }) => {
         ))}
       </div>
 
-      {/* Logo */}
-      <div className="flex items-center justify-center h-full py-1 relative z-20">
-        <Eye />
+      {/* Eye with embedded percentage */}
+      <div
+        ref={eyeContainerRef}
+        className="flex items-center justify-center relative z-20 w-12 h-12"
+      >
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="absolute">
+            <Eye percentage={currentSkill?.percentage} />
+          </div>
+        </div>
       </div>
 
-      {/* Right Nav */}
       <div className="flex gap-4 md:gap-6 flex-1 justify-end items-center h-12 relative z-10">
         {rightLinks.map((link) => (
           <a

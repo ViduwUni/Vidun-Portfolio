@@ -60,7 +60,7 @@ function App() {
     smootherRef.current = ScrollSmoother.create({
       wrapper: wrapperRef.current,
       content: contentRef.current,
-      smooth: 1.2,
+      smooth: 6.5,
       effects: true,
       normalizeScroll: true,
       ignoreMobileResize: true,

@@ -15,11 +15,14 @@ const Contact = () => {
     const fadeInOut = (target, delay = 0) => {
       gsap.fromTo(
         target,
-        { y: 50, opacity: 0 },
+        { y: 120, opacity: 0, skewY: 8, scale: 0.9 },
         {
           y: 0,
           opacity: 1,
-          duration: 1,
+          skewY: 0,
+          scale: 1,
+          ease: "elastic.out(1, 0.4)", // slow + bouncy
+          duration: 5, // slow entry
           delay,
           scrollTrigger: {
             trigger: target,
@@ -44,7 +47,7 @@ const Contact = () => {
           HAVE QUESTIONS? GET IN TOUCH
         </h4>
         <h1 ref={headingRef} className="text-9xl font-bold text-gray-900">
-          CONTACT US
+          CONTACT ME
         </h1>
       </div>
 
@@ -66,14 +69,14 @@ const Contact = () => {
               name="firstName"
               type="text"
               placeholder="First Name"
-              className="bg-black/30 backdrop-blur-md placeholder-gray-400 border border-gray-600 p-3 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              className="bg-black/30 backdrop-blur-md placeholder-gray-600 border border-gray-600 p-3 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               required
             />
             <input
               name="lastName"
               type="text"
               placeholder="Last Name"
-              className="bg-black/30 backdrop-blur-md placeholder-gray-400 border border-gray-600 p-3 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              className="bg-black/30 backdrop-blur-md placeholder-gray-600 border border-gray-600 p-3 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               required
             />
           </div>
@@ -84,14 +87,14 @@ const Contact = () => {
               name="email"
               type="email"
               placeholder="Email"
-              className="bg-black/30 backdrop-blur-md placeholder-gray-400 border border-gray-600 p-3 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              className="bg-black/30 backdrop-blur-md placeholder-gray-600 border border-gray-600 p-3 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               required
             />
             <input
               name="phone"
               type="text"
               placeholder="Phone"
-              className="bg-black/30 backdrop-blur-md placeholder-gray-400 border border-gray-600 p-3 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              className="bg-black/30 backdrop-blur-md placeholder-gray-600 border border-gray-600 p-3 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               required
             />
           </div>
@@ -101,7 +104,7 @@ const Contact = () => {
             name="message"
             placeholder="Your Message"
             rows="5"
-            className="bg-black/30 backdrop-blur-md placeholder-gray-400 border border-gray-600 p-3 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+            className="bg-black/30 backdrop-blur-md placeholder-gray-600 border border-gray-600 p-3 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
             required
           />
         </form>

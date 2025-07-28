@@ -2,10 +2,18 @@ import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import "../eye.css";
 
-const Eye = ({ look = "center", autoLook = true, closed = false }) => {
+const Eye = ({
+  look = "center",
+  autoLook = true,
+  closed = false,
+  percentage = null,
+}) => {
   const eyeRef = useRef(null);
   const pupilRef = useRef(null);
+  const percentageRef = useRef(null);
   const [isBlinking, setIsBlinking] = useState(false);
+  const [showPercentage, setShowPercentage] = useState(false);
+  const timeoutRef = useRef(null);
 
   const movePupil = (x, y) => {
     gsap.to(pupilRef.current, {
@@ -21,7 +29,7 @@ const Eye = ({ look = "center", autoLook = true, closed = false }) => {
     if (!autoLook) return;
 
     const handleMouseMove = (e) => {
-      if (closed || isBlinking) return;
+      if (closed || isBlinking || showPercentage) return;
 
       const eye = eyeRef.current.getBoundingClientRect();
       const centerX = eye.left + eye.width / 2;
@@ -40,11 +48,11 @@ const Eye = ({ look = "center", autoLook = true, closed = false }) => {
 
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [autoLook, closed, isBlinking]);
+  }, [autoLook, closed, isBlinking, showPercentage]);
 
-  // Manual look when autoLook is false
+  // Manual look
   useEffect(() => {
-    if (autoLook || closed || isBlinking) return;
+    if (autoLook || closed || isBlinking || showPercentage) return;
 
     const offset = 20;
     const directions = {
@@ -58,9 +66,9 @@ const Eye = ({ look = "center", autoLook = true, closed = false }) => {
     if (look in directions) {
       movePupil(...directions[look]);
     }
-  }, [look, autoLook, closed, isBlinking]);
+  }, [look, autoLook, closed, isBlinking, showPercentage]);
 
-  // Animate pupil to close/open
+  // Blink effect
   useEffect(() => {
     gsap.to(pupilRef.current, {
       scaleY: closed || isBlinking ? 0.1 : 1,
@@ -78,10 +86,54 @@ const Eye = ({ look = "center", autoLook = true, closed = false }) => {
     return () => clearInterval(interval);
   }, []);
 
+  // Percentage show logic
+  useEffect(() => {
+    if (percentage !== null) {
+      setShowPercentage(true);
+
+      // hide pupil
+      gsap.to(pupilRef.current, { autoAlpha: 0, duration: 0.3 });
+
+      // show percentage
+      gsap.fromTo(
+        percentageRef.current,
+        { autoAlpha: 0, scale: 0.5 },
+        { autoAlpha: 1, scale: 1, duration: 0.4, ease: "back.out(1.7)" }
+      );
+
+      timeoutRef.current = setTimeout(() => {
+        // hide percentage
+        gsap.to(percentageRef.current, {
+          autoAlpha: 0,
+          scale: 0.5,
+          duration: 0.3,
+          ease: "power2.in",
+        });
+
+        // show pupil again
+        gsap.to(pupilRef.current, { autoAlpha: 1, duration: 0.4 });
+
+        setShowPercentage(false);
+      }, 3000);
+    }
+
+    return () => clearTimeout(timeoutRef.current);
+  }, [percentage]);
+
   return (
     <div className="eye-wrapper">
       <div ref={eyeRef} className="eye">
-        <div ref={pupilRef} className="pupil" />
+        <div
+          ref={pupilRef}
+          className="pupil relative flex items-center justify-center"
+        />
+        <div
+          ref={percentageRef}
+          className="absolute inset-0 flex items-center justify-center text-white text-sm font-bold pointer-events-none"
+          style={{ opacity: 0 }}
+        >
+          {percentage !== null && `${Math.round(percentage)}%`}
+        </div>
       </div>
     </div>
   );
