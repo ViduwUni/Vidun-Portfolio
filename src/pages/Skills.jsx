@@ -147,71 +147,71 @@ const Skills = () => {
   }, []);
 
   return (
-    <section
-      ref={containerRef}
-      className="min-h-screen py-32 flex flex-col justify-center items-center bg-gradient-to-b from-white/100 to-black/80 backdrop-blur-xl text-gray-950 overflow-hidden relative"
-    >
-      {/* Particles */}
-      {particles.map((particle) => (
-        <div
-          key={particle.id}
-          className="absolute rounded-full pointer-events-none"
-          style={{
-            left: particle.x,
-            top: particle.y,
-            width: `${particle.size}px`,
-            height: `${particle.size}px`,
-            backgroundColor: particle.color,
-            opacity: particle.opacity,
-            transform: `translate(-50%, -50%)`,
-            transition: "all 1s ease-out",
-          }}
-        />
-      ))}
-
-      <h1
-        ref={headingRef}
-        className="text-6xl md:text-8xl self-start px-8 font-bold mb-16"
+    <>
+      <section
+        ref={containerRef}
+        className="min-h-screen py-32 flex flex-col justify-center items-center bg-gradient-to-b from-white/100 to-white/100 backdrop-blur-xl text-gray-950 overflow-hidden relative -mt-10"
       >
-        WHAT I KNOW
-      </h1>
+        {/* Particles */}
+        {particles.map((particle) => (
+          <div
+            key={particle.id}
+            className="absolute rounded-full pointer-events-none"
+            style={{
+              left: particle.x,
+              top: particle.y,
+              width: `${particle.size}px`,
+              height: `${particle.size}px`,
+              backgroundColor: particle.color,
+              opacity: particle.opacity,
+              transform: `translate(-50%, -50%)`,
+              transition: "all 1s ease-out",
+            }}
+          />
+        ))}
 
-      <div ref={skillsContainerRef} className="w-full space-y-4">
-        {[...Array(7)].map((_, rowIndex) => {
-          const isEven = rowIndex % 2 === 0;
-          const rowSkills = isEven ? skills : [...skills].reverse();
-          const skillsToRender = [...rowSkills, ...rowSkills];
+        <h1
+          ref={headingRef}
+          className="text-6xl md:text-8xl self-start px-8 font-bold mb-10"
+        >
+          WHAT I KNOW
+        </h1>
 
-          return (
-            <div
-              key={rowIndex}
-              className="overflow-hidden py-1 border border-gray-700"
-            >
-              <div
-                ref={(el) => (marqueeRefs.current[rowIndex] = el)}
-                className="relative"
-              >
-                <div className="marquee-content flex items-center gap-12 w-max">
-                  {skillsToRender.map((skill, i) => (
-                    <React.Fragment key={`${skill.name}-${i}`}>
-                      <span
-                        className={`text-6xl md:text-6xl font-extrabold uppercase whitespace-nowrap cursor-pointer hover:scale-110 transition-transform ${
-                          i % 2 === 0 ? "text-slate-200" : ""
-                        }`}
-                        onClick={(e) => createParticles(skill, e)}
-                      >
-                        {skill.name}
-                      </span>
-                      <span className="text-6xl">•</span>
-                    </React.Fragment>
-                  ))}
+        <div ref={skillsContainerRef} className="w-full space-y-3">
+          {[...Array(7)].map((_, rowIndex) => {
+            const isEven = rowIndex % 2 === 0;
+            const rowSkills = isEven ? skills : [...skills].reverse();
+            const skillsToRender = [...rowSkills, ...rowSkills];
+
+            return (
+              <div key={rowIndex} className="overflow-hidden py-1 ">
+                <div
+                  ref={(el) => (marqueeRefs.current[rowIndex] = el)}
+                  className="relative"
+                >
+                  <div className="marquee-content flex items-center gap-10 w-max">
+                    {skillsToRender.map((skill, i) => (
+                      <React.Fragment key={`${skill.name}-${i}`}>
+                        <span
+                          className={`text-6xl md:text-6xl font-extrabold uppercase whitespace-nowrap cursor-pointer hover:scale-110 transition-transform ${
+                            i % 2 === 0 ? "text-slate-600" : ""
+                          }`}
+                          onClick={(e) => createParticles(skill, e)}
+                        >
+                          {skill.name}
+                        </span>
+                        <span className="text-6xl">•</span>
+                      </React.Fragment>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
-    </section>
+            );
+          })}
+        </div>
+      </section>
+      <div className="h-32 w-full bg-white" />
+    </>
   );
 };
 
