@@ -3,8 +3,10 @@ import { gsap } from "gsap";
 
 const LoaderReveal = ({ children, onCheckedChange }) => {
   const [hidden, setHidden] = useState(false);
-  const [tempStop, setTempStop] = useState(true); // 👈 tempStop added
+  const [tempStop, setTempStop] = useState(true); // 👈 tempStop
   const textRef = useRef(null);
+  const subTextRef = useRef(null);
+  const descRef = useRef(null);
   const maskRef = useRef(null);
   const overlayRef = useRef(null);
   // eslint-disable-next-line no-unused-vars
@@ -19,17 +21,25 @@ const LoaderReveal = ({ children, onCheckedChange }) => {
   };
 
   useEffect(() => {
-    // Typewriter effect
     const text = "Welcome to My Portfolio";
+    const subText = "Still in development phase";
+    const desc = "Feel free to explore (Expect bugs and issues)";
+
     let index = 0;
+    let subIndex = 0;
+    let descIndex = 0;
+
     const interval = setInterval(() => {
       if (textRef.current && index < text.length) {
-        textRef.current.textContent += text[index];
-        index++;
+        textRef.current.textContent += text[index++];
+      } else if (subTextRef.current && subIndex < subText.length) {
+        subTextRef.current.textContent += subText[subIndex++];
+      } else if (descRef.current && descIndex < desc.length) {
+        descRef.current.textContent += desc[descIndex++];
       } else {
         clearInterval(interval);
       }
-    }, 80); // typing speed
+    }, 80);
 
     return () => clearInterval(interval);
   }, []);
@@ -42,7 +52,7 @@ const LoaderReveal = ({ children, onCheckedChange }) => {
       ease: "power2.inOut",
       onComplete: () => {
         setHidden(true);
-        setTempStop(false); // 👈 update tempStop after reveal
+        setTempStop(false);
       },
     });
   };
@@ -87,7 +97,24 @@ const LoaderReveal = ({ children, onCheckedChange }) => {
               style={{
                 fontSize: "2rem",
                 whiteSpace: "pre",
+              }}
+            />
+            <div
+              ref={subTextRef}
+              style={{
+                fontSize: "1rem",
+                whiteSpace: "pre",
                 marginBottom: "1.5rem",
+              }}
+            />
+            <div
+              ref={descRef}
+              style={{
+                fontSize: "0.9rem",
+                whiteSpace: "pre-wrap",
+                maxWidth: "400px",
+                color: "#ccc",
+                marginBottom: "2rem",
               }}
             />
             <button
